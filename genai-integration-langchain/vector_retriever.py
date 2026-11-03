@@ -7,6 +7,9 @@ from langchain.chat_models import init_chat_model
 from langgraph.graph import START, StateGraph
 from langchain_core.prompts import PromptTemplate
 from typing_extensions import List, TypedDict
+from langchain_neo4j import Neo4jGraph
+from langchain_openai import OpenAIEmbeddings
+from langchain_neo4j import Neo4jVector
 
 # Initialize the LLM
 model = init_chat_model("gpt-5.2", model_provider="openai")
@@ -30,20 +33,34 @@ class State(TypedDict):
     answer: str
 
 # Connect to Neo4j
-# graph = 
+graph = Neo4jGraph(
+    url=os.getenv("NEO4J_URI"),
+    username=os.getenv("NEO4J_USERNAME"),
+    password=os.getenv("NEO4J_PASSWORD"),
+    database=os.getenv("NEO4J_DATABASE"),
+)
 
 # Create the embedding model
-# embedding_model = 
+embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002")
 
 # Create Vector
-# plot_vector =
+plot_vector = Neo4jVector.from_existing_index(
+    embedding_model,
+    graph=graph,
+    index_name="moviePlots",
+    embedding_node_property="plotEmbedding",
+    text_node_property="plot",
+)
 
 # Define functions for each step in the application
 
-# Retrieve context 
+# Retrieve context
 def retrieve(state: State):
     # Use the vector to find relevant documents
-    context = [Document("Nothing to see here")]
+    context = plot_vector.similarity_search(
+        state["question"],
+        k=6
+    )
     return {"context": context}
 
 # Generate the answer based on the question and context
@@ -61,3 +78,4 @@ app = workflow.compile()
 question = "What is the movie with the pig who wants to be a sheep dog?"
 response = app.invoke({"question": question})
 print("Answer:", response["answer"])
+print("Context:", response["context"])
