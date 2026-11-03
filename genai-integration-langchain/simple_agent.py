@@ -49,6 +49,6 @@ workflow.add_edge(START, "retrieve")
 app = workflow.compile()
 
 # Run the application
-question = "What is the weather in San Francisco?"
+question = "What is the weather in hull?"
 response = app.invoke({"question": question})
 print("Answer:", response["answer"])
